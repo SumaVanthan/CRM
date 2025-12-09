@@ -1,0 +1,7 @@
+{
+  "name": "FinConnect CRM",
+  "description": "A comprehensive NBFC Call Center CRM featuring Customer 360, Telephony Integration, and Analytics.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
