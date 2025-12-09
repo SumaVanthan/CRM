@@ -1,4 +1,4 @@
-import { ChartColumn, LayoutDashboard, Phone, Ticket, Users, FileText, Settings, ShieldAlert } from "lucide-react";
+import { BarChart3, LayoutDashboard, Phone, Ticket, Users, FileText, Settings, ShieldAlert } from "lucide-react";
 
 export const APP_NAME = "FinConnect CRM";
 
@@ -6,7 +6,7 @@ export const NAVIGATION_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'customer360', label: 'Customer 360', icon: Users },
   { id: 'tickets', label: 'Service Requests', icon: Ticket },
-  { id: 'campaigns', label: 'Campaigns', icon: ChartColumn },
+  { id: 'campaigns', label: 'Campaigns', icon: BarChart3 },
   { id: 'reports', label: 'Reports', icon: FileText },
   { id: 'admin', label: 'Admin', icon: Settings },
 ];
