@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Pause, Play, Users, Minus, ChevronUp, ClipboardList, CheckCircle, UserPlus } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Phone, Users, Minus, ChevronUp, ClipboardList, CheckCircle, UserPlus, ArrowRight, Calendar } from 'lucide-react';
 
 interface DialerProps {
   onSimulateIncoming: () => void;
@@ -14,8 +14,39 @@ interface DialerProps {
   callStage?: 'talking' | 'disposition';
   isMuted?: boolean;
   isOnHold?: boolean;
-  isHidden?: boolean; // New prop to hide dialer during talking (handled by header)
+  isHidden?: boolean; 
 }
+
+// Data Structure for Dispositions based on requirements
+const DISPOSITION_DATA = [
+  { disp: 'Customer Busy', sub: 'Asked to call back', cat: 'Positive', action: 'Schedule callback at preferred time; send reminder SMS.' },
+  { disp: 'Customer Busy', sub: 'Call disconnected - Partial Presentation', cat: 'Positive', action: 'Redial in 5 minutes; send pitch summary SMS.' },
+  { disp: 'Different Loan product Request', sub: 'Personal Loan', cat: 'Neutral', action: 'Route lead to PL desk; send PL brochure link.' },
+  { disp: 'Different Loan product Request', sub: 'Two wheeler loan used card loan', cat: 'Neutral', action: 'Route to TWL/UCL desk; send eligibility checklist.' },
+  { disp: 'Different Loan product Request', sub: 'Used car loan', cat: 'Neutral', action: 'Route to UCL desk; send valuation steps.' },
+  { disp: 'Different Loan product Request', sub: 'Gold Loan', cat: 'Neutral', action: 'Share nearest branch details; schedule call with gold loan officer.' },
+  { disp: 'Different Loan product Request', sub: 'Commercial vehicle loan', cat: 'Neutral', action: 'Send doc checklist; assign commercial loan officer.' },
+  { disp: 'Different Loan product Request', sub: 'Working capital loan', cat: 'Neutral', action: 'Connect to SME desk; send WC loan requirements.' },
+  { disp: 'Different Loan product Request', sub: 'Business Loan', cat: 'Neutral', action: 'Assign relationship manager; send BL program brochure.' },
+  { disp: 'Different Loan product Request', sub: 'Home Loan', cat: 'Neutral', action: 'Send HL rate sheet and schedule callback.' },
+  { disp: 'Different Loan product Request', sub: 'Mortgage Loan', cat: 'Neutral', action: 'Route to LAP desk; share LTV details.' },
+  { disp: 'Different Loan product Request', sub: 'Vehicle Insurance', cat: 'Neutral', action: 'Send quote link; schedule follow-up.' },
+  { disp: 'Different Loan product Request', sub: 'General Insurance', cat: 'Neutral', action: 'Transfer to GI sales; send quote link.' },
+  { disp: 'Different Loan product Request', sub: 'Car Insurance', cat: 'Neutral', action: 'Send renewal/quote link.' },
+  { disp: 'Different Loan product Request', sub: 'Life Insurance', cat: 'Neutral', action: 'Schedule advisor call; send policy illustrations.' },
+  { disp: 'Different Loan product Request', sub: 'Mutual Fund Enquiry', cat: 'Neutral', action: 'Route to MF specialist; send KYC link.' },
+  { disp: 'Different Loan product Request', sub: 'FIP Enquiry', cat: 'Neutral', action: 'Share FD vs FIP comparison; pitch FIP.' },
+  { disp: 'Different Loan product Request', sub: 'EMI Enquiry', cat: 'DPR', action: 'Send EMI breakup; offer cross-sell if eligible.' },
+  { disp: 'Do Not Call', sub: 'Do Not Call', cat: 'Negative', action: 'Mark DNC; stop outbound attempts; send confirmation SMS.' },
+  { disp: 'Existing Customer', sub: 'Tax form Enquiry', cat: 'Neutral', action: 'Send interest certificate/26AS link.' },
+  { disp: 'Existing Customer', sub: 'Existing FD Interest Calculation', cat: 'Neutral', action: 'Provide calculation; pitch top-up FD.' },
+  { disp: 'Existing Customer', sub: 'Demographic Update', cat: 'Neutral', action: 'Update details; raise SR if needed.' },
+  { disp: 'Existing Customer', sub: 'Complaint call', cat: 'Neutral', action: 'Register complaint; escalate as per TAT; send tracking ID.' },
+  { disp: 'Existing Customer', sub: 'Service request Not Resolved', cat: 'Neutral', action: 'Reopen SR; escalate to L2; callback after resolution.' },
+  { disp: 'Existing Customer', sub: 'Pre Closure', cat: 'Neutral', action: 'Explain charges; pitch renewal/top-up.' },
+  { disp: 'Existing Customer', sub: 'Pre Closure Charges Enquiry', cat: 'Neutral', action: 'Share charges; provide alternative options.' },
+  { disp: 'Existing Customer', sub: 'FD Renewal process', cat: 'Neutral', action: 'Share renewal flow; offer higher interest renewal.' },
+];
 
 const Dialer: React.FC<DialerProps> = ({ 
     onSimulateIncoming, 
@@ -25,8 +56,6 @@ const Dialer: React.FC<DialerProps> = ({
     activeCustomerName,
     callDuration = 0,
     callStage = 'talking',
-    isMuted = false,
-    isOnHold = false,
     isHidden = false
 }) => {
   const [dialNumber, setDialNumber] = useState('');
@@ -34,15 +63,32 @@ const Dialer: React.FC<DialerProps> = ({
   
   // Disposition State
   const [disposition, setDisposition] = useState('');
+  const [subDisposition, setSubDisposition] = useState('');
   const [notes, setNotes] = useState('');
   const [callbackDate, setCallbackDate] = useState('');
   const [callbackTime, setCallbackTime] = useState('');
+
+  // Derived unique dispositions
+  const uniqueDispositions = useMemo(() => {
+    return Array.from(new Set(DISPOSITION_DATA.map(d => d.disp)));
+  }, []);
+
+  // Filtered sub-dispositions
+  const subDispositions = useMemo(() => {
+    return DISPOSITION_DATA.filter(d => d.disp === disposition);
+  }, [disposition]);
+
+  // Current selected Record
+  const currentDispositionData = useMemo(() => {
+    return DISPOSITION_DATA.find(d => d.disp === disposition && d.sub === subDisposition);
+  }, [disposition, subDisposition]);
 
   // Auto-expand/reset logic
   useEffect(() => {
     if (isCallActive && callStage === 'talking') {
       setIsMinimized(false);
       setDisposition('');
+      setSubDisposition('');
       setNotes('');
       setCallbackDate('');
       setCallbackTime('');
@@ -58,6 +104,13 @@ const Dialer: React.FC<DialerProps> = ({
   const handleCompleteInteraction = () => {
     if (onEndCall) onEndCall();
   };
+
+  // Determine if callback inputs should be shown
+  const showCallback = currentDispositionData?.action.toLowerCase().includes('schedule callback') || 
+                       currentDispositionData?.action.toLowerCase().includes('redial') ||
+                       subDisposition === 'Asked to call back';
+
+  const isFormValid = disposition && subDisposition && (!showCallback || (callbackDate && callbackTime));
 
   // If hidden (e.g. active call handled by Top Bar), return null
   if (isHidden) return null;
@@ -76,10 +129,8 @@ const Dialer: React.FC<DialerProps> = ({
     );
   }
 
-  const isFormValid = disposition && (disposition !== 'Callback Required' || (callbackDate && callbackTime));
-
   return (
-    <div className={`fixed bottom-4 right-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 flex flex-col transition-all duration-300 ${isCallActive ? 'rounded-t-lg' : ''}`}>
+    <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 flex flex-col transition-all duration-300 ${isCallActive ? 'rounded-t-lg' : ''}`}>
       
       {/* Header */}
       <div 
@@ -114,12 +165,11 @@ const Dialer: React.FC<DialerProps> = ({
 
       {/* Screen Body */}
       {!isMinimized && (
-        <div className="bg-gray-50 flex flex-col animate-in slide-in-from-bottom-2 duration-200">
+        <div className="bg-gray-50 flex flex-col animate-in slide-in-from-bottom-2 duration-200 max-h-[80vh] overflow-y-auto custom-scroll">
         
         {isCallActive ? (
           callStage === 'talking' ? (
           // This block is technically unreachable if isHidden=true is passed correctly during talking
-          // But kept as fallback or for future standalone use
           <div className="p-6 flex flex-col items-center">
              <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-4 shadow-inner">
                <Users size={36} className="text-gray-500" />
@@ -132,66 +182,102 @@ const Dialer: React.FC<DialerProps> = ({
           // --------------------------
           // 2. DISPOSITION STAGE UI
           // --------------------------
-          <div className="p-6 flex flex-col">
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <div className="p-6 flex flex-col gap-4">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
                   <CheckCircle size={18} className="text-green-600"/>
-                  Call Ended
+                  Call Disposition
               </h3>
               
-              <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Call Outcome *</label>
+              {/* Disposition Dropdown */}
+              <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Disposition *</label>
                   <select 
                     value={disposition}
-                    onChange={(e) => setDisposition(e.target.value)}
+                    onChange={(e) => { setDisposition(e.target.value); setSubDisposition(''); }}
                     className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-nbfc-500"
                   >
                       <option value="">Select Disposition</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Callback Required">Callback Required</option>
-                      <option value="Sale Made">Sale Made</option>
-                      <option value="Not Interested">Not Interested</option>
-                      <option value="Wrong Number">Wrong Number</option>
-                      <option value="Escalated">Escalated</option>
+                      {uniqueDispositions.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                      ))}
                   </select>
               </div>
 
-              {disposition === 'Callback Required' && (
-                  <div className="grid grid-cols-2 gap-4 mb-4 animate-in fade-in slide-in-from-top-2">
-                      <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Date *</label>
-                          <input 
-                            type="date" 
-                            value={callbackDate}
-                            onChange={(e) => setCallbackDate(e.target.value)}
-                            className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-nbfc-500"
-                          />
+              {/* Sub-Disposition Dropdown */}
+              <div className={!disposition ? 'opacity-50 pointer-events-none' : ''}>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Sub Disposition *</label>
+                  <select 
+                    value={subDisposition}
+                    onChange={(e) => setSubDisposition(e.target.value)}
+                    className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-nbfc-500"
+                    disabled={!disposition}
+                  >
+                      <option value="">Select Detail</option>
+                      {subDispositions.map(d => (
+                          <option key={d.sub} value={d.sub}>{d.sub}</option>
+                      ))}
+                  </select>
+              </div>
+
+              {/* Next Best Action Box */}
+              {currentDispositionData && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-md p-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-700 px-1.5 rounded tracking-wide">Next Best Action</span>
+                          {currentDispositionData.cat === 'Positive' && <span className="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-1.5 rounded tracking-wide">Positive</span>}
+                          {currentDispositionData.cat === 'Negative' && <span className="text-[10px] font-bold uppercase bg-red-100 text-red-700 px-1.5 rounded tracking-wide">Negative</span>}
                       </div>
-                      <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Time *</label>
-                          <input 
-                            type="time" 
-                            value={callbackTime}
-                            onChange={(e) => setCallbackTime(e.target.value)}
-                            className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-nbfc-500"
-                          />
+                      <div className="flex gap-2 items-start text-sm text-blue-800 font-medium">
+                          <ArrowRight size={16} className="shrink-0 mt-0.5"/>
+                          {currentDispositionData.action}
                       </div>
                   </div>
               )}
 
-              <div className="mb-6">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes</label>
+              {/* Callback Inputs (Conditional) */}
+              {showCallback && (
+                  <div className="bg-yellow-50 border border-yellow-100 rounded-md p-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 mb-2 text-yellow-800 font-bold text-xs uppercase">
+                          <Calendar size={14}/> Schedule Callback
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                          <div>
+                              <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Date *</label>
+                              <input 
+                                type="date" 
+                                value={callbackDate}
+                                onChange={(e) => setCallbackDate(e.target.value)}
+                                className="w-full p-1.5 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                              />
+                          </div>
+                          <div>
+                              <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Time *</label>
+                              <input 
+                                type="time" 
+                                value={callbackTime}
+                                onChange={(e) => setCallbackTime(e.target.value)}
+                                className="w-full p-1.5 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                              />
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notes</label>
                   <textarea 
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Enter call summary..."
-                    className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-nbfc-500"
+                    placeholder="Add specific call details..."
+                    className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm h-20 resize-none focus:outline-none focus:ring-2 focus:ring-nbfc-500"
                   ></textarea>
               </div>
 
               <button 
                 onClick={handleCompleteInteraction}
                 disabled={!isFormValid}
-                className={`w-full py-2.5 rounded-lg flex justify-center items-center gap-2 font-bold shadow-sm transition-colors ${!isFormValid ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-nbfc-600 hover:bg-nbfc-700 text-white'}`}
+                className={`w-full py-2.5 rounded-lg flex justify-center items-center gap-2 font-bold shadow-sm transition-colors mt-2 ${!isFormValid ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-nbfc-600 hover:bg-nbfc-700 text-white'}`}
                 type="button"
              >
                 Complete Interaction
