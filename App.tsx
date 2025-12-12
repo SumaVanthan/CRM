@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Bell, Search, User, PhoneIncoming, LogOut, ChevronDown, UserPlus, Phone, PhoneOff, Mic, MicOff, Pause, Play, ClipboardList } from 'lucide-react';
 import { NAVIGATION_ITEMS, MOCK_NOTIFICATIONS } from './constants';
-import { mockCustomer, mockNTBCustomer, mockLoans, mockInvestments, mockInteractions, mockNTBInteractions, mockTickets, mockCampaigns, mockAuditLogs, mockUsers } from './services/mockData';
+import { mockCustomer, mockNTBCustomer, mockLoans, mockFDProducts, mockInsuranceProducts, mockInteractions, mockNTBInteractions, mockTickets, mockCampaigns, mockAuditLogs, mockUsers, mockETBDropOff, mockNTBDropOff } from './services/mockData';
 import Dashboard from './components/Dashboard';
 import Customer360 from './components/Customer360';
 import Dialer from './components/Dialer';
@@ -327,9 +328,11 @@ const App: React.FC = () => {
                     isNTB={isNTB}
                     customer={activeCustomer}
                     loans={isNTB ? [] : mockLoans}
-                    investments={isNTB ? [] : mockInvestments}
+                    fds={isNTB ? [] : mockFDProducts}
+                    insurance={isNTB ? [] : mockInsuranceProducts}
                     interactions={isNTB ? mockNTBInteractions : mockInteractions}
                     tickets={mockTickets}
+                    dropOffDetails={isNTB ? mockNTBDropOff : mockETBDropOff}
                 />
             )}
             {activeView === 'tickets' && (

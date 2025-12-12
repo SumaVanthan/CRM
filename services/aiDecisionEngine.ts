@@ -1,30 +1,62 @@
 
-import { AIState, QuestionNode, LeadProfile, AnswerOption } from '../types';
 
-// Define the Decision Tree Nodes for FD Drop-off Scenario
+import { AIState, QuestionNode, AnswerOption } from '../types';
+
+// Define the Decision Tree Nodes
 const QUESTIONS: Record<string, QuestionNode> = {
-  // --- Root ---
-  'Start': {
-    id: 'Start',
-    text: "Opening Script",
-    agentScript: "Hi, I'm calling from Shriram Finance. I noticed you were checking our FD rates online a few minutes ago but didn't complete the booking. Was there any specific information you needed or a concern I can help clarify?",
-    persuasionTip: "Acknowledge their action immediately. This shows relevance and attentiveness, not a cold call.",
+  // --- Scenarios ---
+  
+  // 1. Drop-off Scenario (Existing)
+  'DropOff_Start': {
+    id: 'DropOff_Start',
+    text: "Drop-off Recovery Opening",
+    agentScript: "Hi, I'm calling from Shriram Finance. I noticed you started an application for a Fixed Deposit of ₹{amount} but couldn't complete it. Was there any technical issue I can help with?",
+    persuasionTip: "Address the specific product and amount to show context. Be helpful, not salesy initially.",
     type: 'choice',
     options: [
-      { text: 'Just Checking Rates', intent: 'neutral' }, 
-      { text: 'Rates seem low', intent: 'objection' }, 
-      { text: 'Concerned about Safety', intent: 'objection' }, 
-      { text: 'Need money soon', intent: 'objection' }
+      { text: 'Technical Issue', intent: 'neutral' }, 
+      { text: 'Just Checking', intent: 'objection' }, 
+      { text: 'Payment Failed', intent: 'neutral' }
     ],
     category: 'Identity'
   },
+
+  // 2. Maturity Nearing Scenario
+  'Maturity_Start': {
+    id: 'Maturity_Start',
+    text: "Maturity Renewal Opening",
+    agentScript: "Hi, this is regarding your FD ending on 12th Feb. It is eligible for a special renewal rate of 7.25%. Would you like to lock this rate today?",
+    persuasionTip: "Create urgency around the 'Special Renewal Rate'.",
+    type: 'choice',
+    options: [
+      { text: 'Interested in Renewal', intent: 'positive' }, 
+      { text: 'Want to Withdraw', intent: 'negative' }
+    ],
+    category: 'Investment'
+  },
+
+  // 3. Collection/Overdue Scenario
+  'Collection_Start': {
+    id: 'Collection_Start',
+    text: "EMI Overdue Opening",
+    agentScript: "Hi, this is a reminder that your Personal Loan EMI of ₹{emi} is overdue by 32 days. To avoid impact on your CIBIL score, shall I send a payment link now?",
+    persuasionTip: "Use 'Loss Aversion' (CIBIL score impact).",
+    type: 'choice',
+    options: [
+      { text: 'Send Link', intent: 'positive' }, 
+      { text: 'Will Pay Later', intent: 'neutral' },
+      { text: 'Dispute Charges', intent: 'objection' }
+    ],
+    category: 'Loan'
+  },
+
+  // --- Common Objections & Closings ---
   
-  // --- Objection: Just Checking ---
   'Obj_Browsing': {
     id: 'Obj_Browsing',
     text: "Handling Browsing",
-    agentScript: "Completely understand. Since you are exploring, did you know we currently offer one of the highest interest rates in the market at 9.40%* p.a. for senior citizens? This is a limited-time festive offer.",
-    persuasionTip: "Pivot from 'just looking' to 'fear of missing out' (FOMO). Highlight the headline rate immediately.",
+    agentScript: "Completely understand. Since you are exploring, did you know we currently offer one of the highest interest rates in the market at 9.40%* p.a.? This is a limited-time festive offer.",
+    persuasionTip: "Pivot to FOMO. Highlight the headline rate.",
     type: 'choice',
     options: [
       { text: 'Tell me more', intent: 'positive' }, 
@@ -33,54 +65,11 @@ const QUESTIONS: Record<string, QuestionNode> = {
     category: 'Investment'
   },
 
-  // --- Objection: Rates Low ---
-  'Obj_RatesLow': {
-    id: 'Obj_RatesLow',
-    text: "Handling Rate Comparison",
-    agentScript: "I hear you. However, compared to standard bank FDs which average around 7%, our 9.1% yield effectively beats inflation. Plus, we offer 0.5% extra for senior citizens/women. Would you like a quick calculation?",
-    persuasionTip: "Use the 'Contrast Principle'. Frame the rate against lower bank averages to make it shine.",
-    type: 'choice',
-    options: [
-      { text: 'Show Calculation', intent: 'positive' }, 
-      { text: 'Still not convinced', intent: 'negative' }
-    ],
-    category: 'Investment'
-  },
-
-  // --- Objection: Safety ---
-  'Obj_Safety': {
-    id: 'Obj_Safety',
-    text: "Handling Trust/Safety",
-    agentScript: "Safety is our priority too. We are rated 'MAA+/Stable' by ICRA and have been serving customers for over 45 years. Your principal is backed by the Shriram Group legacy.",
-    persuasionTip: "Leverage 'Social Proof' and 'Authority'. Mentioning ratings and years in business builds trust.",
-    type: 'choice',
-    options: [
-      { text: 'Okay, that helps', intent: 'positive' }, 
-      { text: 'I prefer Banks', intent: 'negative' }
-    ],
-    category: 'Investment'
-  },
-
-  // --- Objection: Liquidity ---
-  'Obj_Liquidity': {
-    id: 'Obj_Liquidity',
-    text: "Handling Lock-in Fears",
-    agentScript: "I understand you might need funds. The good news is, we offer a Loan against FD up to 90% of the value. You get high returns, but your money isn't stuck if an emergency happens.",
-    persuasionTip: "Address the 'Liquidity Trap' fear. Offering an exit option (Loan) reduces the risk of commitment.",
-    type: 'choice',
-    options: [
-      { text: 'That sounds good', intent: 'positive' }, 
-      { text: 'No, I need cash', intent: 'negative' }
-    ],
-    category: 'Investment'
-  },
-
-  // --- Closing ---
   'Closing_Soft': {
     id: 'Closing_Soft',
-    text: "Soft Close - Calculation",
-    agentScript: "Great. If you invest ₹1 Lakh today, it grows to approx ₹1.35 Lakhs in just 42 months. Shall I send you a secure link to lock this rate?",
-    persuasionTip: "Use 'Visualisation'. Concrete numbers are more persuasive than percentages.",
+    text: "Soft Close - Link",
+    agentScript: "Great. I'm sending a secure link to your mobile. You can complete the process in just 2 minutes. Shall I send it?",
+    persuasionTip: "Minimize effort. 'Just 2 minutes'.",
     type: 'choice',
     options: [
       { text: 'Yes, send link', intent: 'positive' }, 
@@ -92,8 +81,8 @@ const QUESTIONS: Record<string, QuestionNode> = {
   'Closing_Hard': {
     id: 'Closing_Hard',
     text: "Hard Close - Booking",
-    agentScript: "Since you are happy with the returns, I can help you book this right now on the call. It only takes 2 minutes and you start earning interest from today. Shall we proceed?",
-    persuasionTip: "The 'Assumptive Close'. Minimize friction and assume they want to proceed to reduce hesitation.",
+    agentScript: "Since you are happy with the returns, I can help you book this right now on the call. Shall we proceed?",
+    persuasionTip: "Assumptive Close.",
     type: 'choice',
     options: [
       { text: 'Proceed', intent: 'positive' }, 
@@ -102,12 +91,11 @@ const QUESTIONS: Record<string, QuestionNode> = {
     category: 'Closing'
   },
 
-  // --- End States ---
   'End_Success': {
     id: 'End_Success',
     text: "Success",
-    agentScript: "Excellent! I have initiated the booking. You will receive an OTP shortly.",
-    persuasionTip: "Congratulations! Interaction successful.",
+    agentScript: "Excellent! I have initiated the process. You will receive an SMS shortly.",
+    persuasionTip: "Confirm and Close.",
     type: 'choice',
     options: [
       { text: 'End Call', intent: 'neutral' }
@@ -117,8 +105,8 @@ const QUESTIONS: Record<string, QuestionNode> = {
   'End_Neutral': {
     id: 'End_Neutral',
     text: "Neutral",
-    agentScript: "No problem. I have sent the detailed brochure to your email. Please verify it at your convenience. Thank you.",
-    persuasionTip: "Leave the door open. A neutral exit is better than a pushy failure.",
+    agentScript: "No problem. I have noted your preference. Thank you for your time.",
+    persuasionTip: "Polite Exit.",
     type: 'choice',
     options: [
       { text: 'End Call', intent: 'neutral' }
@@ -130,13 +118,36 @@ const QUESTIONS: Record<string, QuestionNode> = {
 export class AIDecisionEngine {
   private state: AIState;
 
-  constructor() {
+  constructor(context?: { isDropOff?: boolean; isOverdue?: boolean; isMaturity?: boolean; amount?: string }) {
+    let startNodeId = 'DropOff_Start'; // Default fallback
+
+    if (context?.isOverdue) startNodeId = 'Collection_Start';
+    else if (context?.isMaturity) startNodeId = 'Maturity_Start';
+    else if (context?.isDropOff) startNodeId = 'DropOff_Start';
+    
+    // Inject dynamic values into script if needed
+    let startScript = QUESTIONS[startNodeId].agentScript || "";
+    if (context?.amount) {
+        startScript = startScript.replace('{amount}', context.amount).replace('{emi}', context.amount);
+    }
+    // Note: In a real app we'd clone the node to avoid mutating static const, 
+    // but here we just assume the consuming component handles the string display if we return it in state.
+    // For simplicity, we are not mutating the QUESTIONS object directly here but relying on the component to render.
+    
+    // Hack: Mutating the text for the session instance (simplified)
+    if (context?.amount) {
+         QUESTIONS[startNodeId] = {
+             ...QUESTIONS[startNodeId],
+             agentScript: startScript
+         }
+    }
+
     this.state = {
-      currentNodeId: 'Start',
+      currentNodeId: startNodeId,
       history: [],
-      scores: { intent: 40, eligibility: 80 }, // Start with mid intent (drop-off) but high eligibility
+      scores: { intent: 40, eligibility: 80 },
       customerProfile: { intentType: 'Investment' },
-      recommendation: "FD - 9.40% Special Scheme",
+      recommendation: context?.isOverdue ? "Pay EMI" : "FD - 9.40% Special Scheme",
       objectionPrediction: "Rate Sensitivity"
     };
   }
@@ -152,14 +163,12 @@ export class AIDecisionEngine {
   processAnswer(answerText: string): AIState {
     const currentNode = QUESTIONS[this.state.currentNodeId];
     
-    // Update History with Script context
     this.state.history.push({ 
-        question: currentNode.text, // Internal label
-        script: currentNode.agentScript, // What was said
+        question: currentNode.text, 
+        script: currentNode.agentScript, 
         answer: answerText 
     });
 
-    // Scoring Updates
     if (answerText.includes('Not interested') || answerText.includes('No')) {
         this.state.scores.intent -= 20;
     } else {
@@ -167,36 +176,24 @@ export class AIDecisionEngine {
     }
     this.state.scores.intent = Math.min(100, Math.max(0, this.state.scores.intent));
 
-    // Transition Logic
-    let nextNodeId = '';
+    let nextNodeId = 'End_Neutral'; // Default end
 
-    if (currentNode.id === 'Start') {
-        if (answerText === 'Just Checking Rates') nextNodeId = 'Obj_Browsing';
-        else if (answerText === 'Rates seem low') nextNodeId = 'Obj_RatesLow';
-        else if (answerText === 'Concerned about Safety') nextNodeId = 'Obj_Safety';
-        else if (answerText === 'Need money soon') nextNodeId = 'Obj_Liquidity';
-    } 
-    
-    // Objection Handling Transitions
+    // Simple Logic Routing
+    if (currentNode.id === 'DropOff_Start') {
+        if (answerText === 'Technical Issue') nextNodeId = 'Closing_Soft';
+        else if (answerText === 'Just Checking') nextNodeId = 'Obj_Browsing';
+    }
+    else if (currentNode.id === 'Maturity_Start') {
+        nextNodeId = answerText === 'Interested in Renewal' ? 'Closing_Hard' : 'End_Neutral';
+    }
+    else if (currentNode.id === 'Collection_Start') {
+        nextNodeId = answerText === 'Send Link' ? 'End_Success' : 'End_Neutral';
+    }
     else if (currentNode.id === 'Obj_Browsing') {
         nextNodeId = answerText === 'Tell me more' ? 'Closing_Soft' : 'End_Neutral';
     }
-    else if (currentNode.id === 'Obj_RatesLow') {
-        nextNodeId = answerText === 'Show Calculation' ? 'Closing_Soft' : 'End_Neutral';
-    }
-    else if (currentNode.id === 'Obj_Safety') {
-        nextNodeId = answerText === 'Okay, that helps' ? 'Closing_Hard' : 'End_Neutral';
-    }
-    else if (currentNode.id === 'Obj_Liquidity') {
-        nextNodeId = answerText === 'That sounds good' ? 'Closing_Soft' : 'End_Neutral';
-    }
-
-    // Closing Transitions
-    else if (currentNode.id === 'Closing_Soft') {
-        nextNodeId = answerText === 'Yes, send link' ? 'End_Success' : 'End_Neutral';
-    }
-    else if (currentNode.id === 'Closing_Hard') {
-        nextNodeId = answerText === 'Proceed' ? 'End_Success' : 'End_Neutral';
+    else if (currentNode.id === 'Closing_Soft' || currentNode.id === 'Closing_Hard') {
+        nextNodeId = answerText.includes('Yes') || answerText.includes('Proceed') ? 'End_Success' : 'End_Neutral';
     }
 
     if (nextNodeId && QUESTIONS[nextNodeId]) {

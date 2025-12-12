@@ -1,7 +1,9 @@
 
+
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { DashboardStats } from '../types';
+import { DashboardStats, CallLog } from '../types';
+import { mockCallLogs } from '../services/mockData';
 import { ArrowUp, ArrowDown, Clock, PhoneIncoming, Users, CheckCircle, Smartphone, UserCheck, Timer, Briefcase, Star, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const dataCallVolume = [
@@ -51,6 +53,65 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, colorClass = "bg-n
             {trend === 'up' ? <ArrowUp size={14} className="text-green-500 mr-1"/> : <ArrowDown size={14} className="text-red-500 mr-1"/>}
             <span className={trend === 'up' ? 'text-green-600' : 'text-red-600'}>{subtext}</span>
             <span className="text-gray-400 ml-1">vs yesterday</span>
+        </div>
+    </div>
+);
+
+// Call History Table Component (Reusable)
+const CallHistoryTable = ({ calls, isManager = false }: { calls: CallLog[], isManager?: boolean }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+        <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800">{isManager ? 'Team Call History (Global CDR)' : 'My Recent Call History'}</h3>
+        </div>
+        <div className="overflow-x-auto custom-scroll">
+            <table className="w-full text-left text-sm text-gray-600 whitespace-nowrap">
+                <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500 border-b border-gray-200">
+                    <tr>
+                        <th className="px-6 py-4">S.No</th>
+                        <th className="px-6 py-4">User ID</th>
+                        <th className="px-6 py-4">Caller ID</th>
+                        <th className="px-6 py-4">Call Date</th>
+                        <th className="px-6 py-4">Campaign Name</th>
+                        <th className="px-6 py-4">Disposition</th>
+                        <th className="px-6 py-4">Sub Disposition</th>
+                        <th className="px-6 py-4">Lead ID</th>
+                        <th className="px-6 py-4">Lead Date</th>
+                        <th className="px-6 py-4">Call Active</th>
+                        <th className="px-6 py-4">Ops Active</th>
+                        <th className="px-6 py-4">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                    {calls.map((log, index) => (
+                        <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs">{index + 1}</td>
+                            <td className="px-6 py-4 font-bold text-gray-900">{log.userId}</td>
+                            <td className="px-6 py-4 font-mono">{log.callerId}</td>
+                            <td className="px-6 py-4">{log.callDate}</td>
+                            <td className="px-6 py-4 text-gray-800">{log.campaignName}</td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    log.disposition.includes('Resolved') || log.disposition.includes('Pay') ? 'bg-green-100 text-green-700' : 
+                                    log.disposition.includes('Busy') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                    {log.disposition}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-gray-500">{log.subDisposition}</td>
+                            <td className="px-6 py-4 font-mono text-xs">{log.leadId}</td>
+                            <td className="px-6 py-4">{log.leadDate}</td>
+                            <td className="px-6 py-4 font-mono font-medium">{log.callActiveTime}</td>
+                            <td className="px-6 py-4 font-mono text-gray-500">{log.opsActiveTime}</td>
+                            <td className="px-6 py-4 truncate max-w-xs" title={log.remarks}>{log.remarks}</td>
+                        </tr>
+                    ))}
+                    {calls.length === 0 && (
+                        <tr>
+                            <td colSpan={12} className="px-6 py-8 text-center text-gray-400">No call records found.</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
         </div>
     </div>
 );
@@ -205,6 +266,9 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, userRole = 'Manager' }) =>
                     </tbody>
                 </table>
             </div>
+
+            {/* Team Call History (New for Manager) */}
+            <CallHistoryTable calls={mockCallLogs} isManager={true} />
         </div>
       );
   }
@@ -331,50 +395,8 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, userRole = 'Manager' }) =>
              </div>
         </div>
 
-        {/* My Recent Calls */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-            <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800">My Recent Call History</h3>
-            </div>
-            <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500 border-b border-gray-200">
-                    <tr>
-                        <th className="px-6 py-4">Time</th>
-                        <th className="px-6 py-4">Customer</th>
-                        <th className="px-6 py-4">Type</th>
-                        <th className="px-6 py-4">Duration</th>
-                        <th className="px-6 py-4">Disposition</th>
-                        <th className="px-6 py-4">Outcome</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                    <tr className="hover:bg-gray-50">
-                        <td className="px-6 py-4">10:30 AM</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">Rajesh Verma</td>
-                        <td className="px-6 py-4">Inbound</td>
-                        <td className="px-6 py-4">04:12</td>
-                        <td className="px-6 py-4">Resolved</td>
-                        <td className="px-6 py-4"><span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">Success</span></td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                        <td className="px-6 py-4">10:15 AM</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">Priya Singh</td>
-                        <td className="px-6 py-4">Outbound</td>
-                        <td className="px-6 py-4">02:45</td>
-                        <td className="px-6 py-4">Callback</td>
-                        <td className="px-6 py-4"><span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-200">Pending</span></td>
-                    </tr>
-                     <tr className="hover:bg-gray-50">
-                        <td className="px-6 py-4">09:45 AM</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">Amit Sharma</td>
-                        <td className="px-6 py-4">Inbound</td>
-                        <td className="px-6 py-4">06:20</td>
-                        <td className="px-6 py-4">Escalated</td>
-                        <td className="px-6 py-4"><span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200">Ticket Raised</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        {/* My Recent Calls (Agent View - Filtered in real app, mocked here) */}
+        <CallHistoryTable calls={mockCallLogs.filter(c => c.userId === 'AGT-2022')} />
     </div>
   );
 };

@@ -48,7 +48,7 @@ export interface Offer {
 export interface CommunicationTemplate {
   id: string;
   name: string;
-  channel: 'SMS' | 'Email';
+  channel: 'SMS' | 'Email' | 'WhatsApp';
   category: 'Service' | 'Sales' | 'Collections';
   content: string;
 }
@@ -65,6 +65,7 @@ export interface Loan {
   id: string;
   type: LoanType;
   accountNumber: string;
+  holderName: string; // Name of borrower
   sanctionedAmount: number;
   outstandingPrincipal: number;
   interestRate: number;
@@ -74,23 +75,77 @@ export interface Loan {
   tenureMonths: number;
   startDate: string;
   collateral?: string; // For secured loans
+  // C360 Document Flags
+  hasLoanStatement?: boolean;
+  hasLedger?: boolean;
+  hasSanctionLetter?: boolean;
+  hasRepaymentSchedule?: boolean;
 }
 
 // 3.2.4 Investment Portfolio
-export interface Investment {
+// Detailed FD Product structure based on C360 spec
+export interface FDProduct {
   id: string;
-  type: 'FD' | 'RD' | 'Mutual Fund';
-  accountNumber: string;
+  type: 'FD' | 'RD';
+  certificateNumber: string;
+  holderName: string; // Name of holder
+  nominee?: string; // Name of nominee
+  folioNo: string;
+  acknowledgementNo: string;
+  refundAckNo?: string;
+  chequeNo?: string;
   amount: number;
   interestRate: number;
   maturityDate: string;
   maturityAmount: number;
+  status: 'Active' | 'Matured' | 'Closed';
+  // Document Flags
+  hasTdsCertificate: boolean;
+  hasForm15G: boolean;
+  hasSOA: boolean;
+  hasLedger: boolean;
+}
+
+// Insurance Product structure based on C360 spec
+export interface InsuranceProduct {
+  id: string;
+  productName: string;
+  policyNo: string;
+  holderName: string; // Added holder name
+  premiumPaid: string;
+  nextDueDate: string;
+  acknowledgementNo?: string;
+  srNo?: string;
+  hasPolicyDocument: boolean;
+}
+
+// Simplified Investment interface for backward compatibility if needed, 
+// but we prefer FDProduct for the detailed view.
+export interface Investment extends Partial<FDProduct> {
+  accountNumber: string; // mapping certificateNumber to this for generic views
+}
+
+// Drop-off / In-progress Investment Details
+export interface DropOffDetails {
+  applicationId: string;
+  productType: 'FD' | 'Loan' | 'Insurance';
+  enteredAmount?: string;
+  enteredTenure?: string;
+  kycProgress: string; // e.g., "60%"
+  stage: string; // e.g., "KYC Pending"
+  lastActivity?: string;
+  capturedData?: {
+      name: string;
+      mobile: string;
+      pan?: string;
+      paymentMethod?: string;
+  };
 }
 
 // 3.2.7 Communication History (Omni-channel)
 export interface Interaction {
   id: string;
-  type: 'Call' | 'Email' | 'SMS' | 'Visit' | 'Web' | 'App' | 'System';
+  type: 'Call' | 'Email' | 'SMS' | 'Visit' | 'Web' | 'App' | 'System' | 'WhatsApp';
   direction: 'Inbound' | 'Outbound' | 'N/A';
   date: string;
   summary: string;
@@ -101,6 +156,22 @@ export interface Interaction {
     deliveryStatus?: 'Sent' | 'Delivered' | 'Read' | 'Failed';
     recordingUrl?: string;
   };
+}
+
+// Call Logs (CDR) for Agent/Manager History
+export interface CallLog {
+  id: string;
+  userId: string;
+  callerId: string;
+  callDate: string; // DATETIME
+  campaignName: string;
+  remarks: string;
+  disposition: string;
+  subDisposition: string;
+  leadId: string;
+  leadDate: string; // DATETIME
+  callActiveTime: string; // TIME (Predictive)
+  opsActiveTime: string; // TIME (Preview)
 }
 
 // 3.2.8 Service Requests
