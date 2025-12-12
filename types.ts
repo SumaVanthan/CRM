@@ -155,6 +155,11 @@ export interface Interaction {
     templateUsed?: string;
     deliveryStatus?: 'Sent' | 'Delivered' | 'Read' | 'Failed';
     recordingUrl?: string;
+    // Campaign Tracking Fields
+    campaignSource?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
   };
 }
 

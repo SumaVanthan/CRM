@@ -5,7 +5,7 @@ import { Customer, Loan, FDProduct, InsuranceProduct, DropOffDetails, Interactio
 import { mockOffers, mockTemplates } from '../services/mockData';
 import { AIDecisionEngine } from '../services/aiDecisionEngine';
 import PrivacyText from './PrivacyText';
-import { CreditCard, Wallet, FileText, AlertTriangle, CheckCircle, Smartphone, Mail, Target, Lightbulb, History, Zap, Bot, UserPlus, AlertCircle, Send, MessageSquare, Printer, Eye, ChevronDown, Download, Share2, Shield } from 'lucide-react';
+import { CreditCard, Wallet, FileText, AlertTriangle, CheckCircle, Smartphone, Mail, Target, Lightbulb, History, Zap, Bot, UserPlus, AlertCircle, Send, MessageSquare, Printer, Eye, ChevronDown, Download, Share2, Shield, Globe, MousePointer, Flag } from 'lucide-react';
 
 interface Customer360Props {
   customer: Customer;
@@ -24,7 +24,7 @@ const Customer360: React.FC<Customer360Props> = ({ customer, loans, fds, insuran
   // Initialize AI Engine with context
   const engineRef = useRef<AIDecisionEngine | null>(null);
   
-  // Reset engine on customer change
+  // 1. AI Engine Effect: Updates context when data changes
   useEffect(() => {
     engineRef.current = new AIDecisionEngine({
         isDropOff: !!dropOffDetails,
@@ -34,12 +34,14 @@ const Customer360: React.FC<Customer360Props> = ({ customer, loans, fds, insuran
     });
     setCurrentQuestion(engineRef.current.getCurrentQuestion());
     setAiState(engineRef.current.getState());
-    
-    // Set default tab based on customer type
+  }, [customer.id, isNTB, dropOffDetails, loans, fds]);
+
+  // 2. Tab Reset Effect: ONLY sets the default tab when the Customer ID changes
+  // This prevents the tab from resetting when parent components re-render (e.g. call timer ticks)
+  useEffect(() => {
     if (isNTB) setActiveTab('sales_coach');
     else setActiveTab('overview');
-
-  }, [customer.id, isNTB, dropOffDetails, loans, fds]);
+  }, [customer.id]); // Strict dependency on ID only
 
   const engine = engineRef.current!;
   const [currentQuestion, setCurrentQuestion] = useState(engine?.getCurrentQuestion());
@@ -91,6 +93,20 @@ const Customer360: React.FC<Customer360Props> = ({ customer, loans, fds, insuran
         case 'objection': return 'bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-800 hover:border-amber-300';
         default: return 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 hover:border-gray-300';
     }
+  };
+
+  const getInteractionIcon = (type: string, metadata: any) => {
+      // Special icon for Journey Start (First Touch)
+      if (metadata?.campaignSource && type === 'Web' && metadata?.campaignSource.includes('Paid')) return <Flag size={16} className="text-purple-600" />;
+      
+      switch(type) {
+          case 'Call': return <Smartphone size={16} className="text-blue-600" />;
+          case 'Email': return <Mail size={16} className="text-indigo-600" />;
+          case 'SMS': return <MessageSquare size={16} className="text-pink-600" />;
+          case 'Web': return <Globe size={16} className="text-green-600" />;
+          case 'App': return <Smartphone size={16} className="text-teal-600" />;
+          default: return <MousePointer size={16} className="text-gray-600" />;
+      }
   };
 
   return (
@@ -432,24 +448,69 @@ const Customer360: React.FC<Customer360Props> = ({ customer, loans, fds, insuran
             </div>
         )}
 
-        {/* --- TAB: HISTORY --- */}
+        {/* --- TAB: HISTORY (Updated to Timeline) --- */}
         {activeTab === 'history' && (
-             <div className="space-y-4">
-                 {interactions.map(i => (
-                     <div key={i.id} className="bg-white p-4 rounded-lg border border-gray-200 flex justify-between items-start">
-                         <div>
-                             <p className="font-bold text-sm text-gray-900 flex items-center gap-2">
-                                 {i.type === 'Call' && <Smartphone size={14}/>}
-                                 {i.type === 'Email' && <Mail size={14}/>}
-                                 {i.type} <span className="text-xs font-normal text-gray-500">• {i.date}</span>
-                             </p>
-                             <p className="text-sm text-gray-600 mt-1">{i.summary}</p>
-                         </div>
-                         {i.sentiment && (
-                            <span className={`text-xs px-2 py-1 rounded ${i.sentiment === 'Negative' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{i.sentiment}</span>
-                         )}
-                     </div>
-                 ))}
+             <div className="relative pl-4">
+                 <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                 <div className="space-y-8 py-2">
+                    {interactions.map((i) => (
+                        <div key={i.id} className="relative flex gap-6 group">
+                             {/* Icon on Timeline */}
+                             <div className="z-10 w-10 h-10 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center shadow-sm shrink-0 mt-1.5 ml-[0.35rem] ring-4 ring-gray-50">
+                                {getInteractionIcon(i.type, i.metadata)}
+                             </div>
+                             
+                             {/* Card Content */}
+                             <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm relative hover:border-nbfc-200 transition-colors">
+                                <div className="absolute top-4 right-4">
+                                     {i.sentiment && (
+                                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                                            i.sentiment === 'Negative' ? 'bg-red-50 text-red-700' : 
+                                            i.sentiment === 'Positive' ? 'bg-green-50 text-green-700' : 
+                                            'bg-gray-100 text-gray-600'
+                                        }`}>
+                                            {i.sentiment}
+                                        </span>
+                                     )}
+                                </div>
+                                
+                                <div className="mb-1.5 flex items-center gap-2">
+                                    <span className="font-bold text-gray-900 text-sm">{i.type}</span>
+                                    <span className="text-gray-400 text-xs">• {i.date}</span>
+                                </div>
+                                
+                                <p className="text-sm text-gray-700 font-medium leading-snug">{i.summary}</p>
+                                
+                                {/* Campaign/Source Badges */}
+                                {i.metadata?.campaignSource && (
+                                    <div className="mt-3 flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wide border border-indigo-100">
+                                            <Target size={10} /> Source: {i.metadata.campaignSource}
+                                        </span>
+                                        {i.metadata.utmSource && (
+                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-100 text-gray-600 text-[10px] font-mono border border-gray-200">
+                                                utm: {i.metadata.utmSource}
+                                            </span>
+                                        )}
+                                        {i.metadata.utmCampaign && (
+                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-100 text-gray-600 text-[10px] font-mono border border-gray-200">
+                                                camp: {i.metadata.utmCampaign}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                             </div>
+                        </div>
+                    ))}
+                 </div>
+                 
+                 {/* Journey Start Indicator (Only for NTB usually, or long history) */}
+                 <div className="flex gap-6 mt-8 opacity-50">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 ml-[0.35rem]">
+                        <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                    </div>
+                    <div className="py-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Journey Start</div>
+                 </div>
              </div>
         )}
       </div>

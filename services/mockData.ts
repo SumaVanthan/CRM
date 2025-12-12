@@ -199,12 +199,13 @@ export const mockTemplates: CommunicationTemplate[] = [
   { id: 'TMP-004', name: 'Drop-off Recovery', channel: 'WhatsApp', category: 'Sales', content: 'Hi {name}, we noticed you tried to book an FD of {amount}. Click here to complete the process: {link}' },
 ];
 
+// ETB (Existing Customer) Interactions - Updated with 2 Year History & Campaign Sources
 export const mockInteractions: Interaction[] = [
   {
     id: 'INT-001',
     type: 'Call',
     direction: 'Inbound',
-    date: '2023-10-25 10:30 AM',
+    date: '2023-10-30 10:30 AM',
     summary: 'Customer enquired about foreclosure charges for Personal Loan.',
     agentName: 'Sarah Jenkins',
     sentiment: 'Neutral',
@@ -214,7 +215,7 @@ export const mockInteractions: Interaction[] = [
     id: 'INT-002',
     type: 'Email',
     direction: 'Outbound',
-    date: '2023-10-25 10:45 AM',
+    date: '2023-10-30 10:45 AM',
     summary: 'Sent foreclosure statement via email.',
     agentName: 'System',
     metadata: { templateUsed: 'Foreclosure Statement', deliveryStatus: 'Delivered' }
@@ -223,8 +224,8 @@ export const mockInteractions: Interaction[] = [
     id: 'INT-003',
     type: 'Call',
     direction: 'Outbound',
-    date: '2023-10-20 02:15 PM',
-    summary: 'Collection follow-up for PL overdues. Customer promised to pay by 28th.',
+    date: '2023-08-15 02:15 PM',
+    summary: 'Collection follow-up for PL overdues. Customer promised to pay by 20th.',
     agentName: 'Mike Ross',
     sentiment: 'Negative'
   },
@@ -232,7 +233,7 @@ export const mockInteractions: Interaction[] = [
     id: 'INT-004',
     type: 'App',
     direction: 'N/A',
-    date: '2023-10-28 08:15 PM',
+    date: '2023-06-20 08:15 PM',
     summary: 'Customer checked "Loan Statement" section in Mobile App',
     agentName: 'System'
   },
@@ -240,10 +241,39 @@ export const mockInteractions: Interaction[] = [
     id: 'INT-005',
     type: 'SMS',
     direction: 'Outbound',
-    date: '2023-10-29 09:00 AM',
-    summary: 'Payment Reminder SMS Sent',
+    date: '2023-01-10 09:00 AM',
+    summary: 'Top-up Loan Disbursal Alert Sent',
     agentName: 'System',
     metadata: { deliveryStatus: 'Delivered' }
+  },
+  {
+    id: 'INT-006',
+    type: 'Web',
+    direction: 'N/A',
+    date: '2023-01-08 04:30 PM',
+    summary: 'Applied for Personal Loan Top-up via Email Campaign link.',
+    agentName: 'System',
+    sentiment: 'Positive',
+    metadata: { campaignSource: 'Cross-Sell Email', utmSource: 'crm_email', utmCampaign: 'pl_topup_jan23' }
+  },
+  {
+    id: 'INT-007',
+    type: 'Call',
+    direction: 'Inbound',
+    date: '2022-05-12 11:20 AM',
+    summary: 'Service Request: Address Update. Verified via OTP.',
+    agentName: 'Priya Sharma',
+    sentiment: 'Neutral'
+  },
+  {
+    id: 'INT-008',
+    type: 'Web',
+    direction: 'N/A',
+    date: '2021-10-15 09:30 AM',
+    summary: 'First Website Visit - Landed on Home Loan Page.',
+    agentName: 'System',
+    sentiment: 'Neutral',
+    metadata: { campaignSource: 'Paid Search', utmSource: 'google_ads', utmMedium: 'cpc', utmCampaign: 'hl_acquisition_2021' }
   }
 ];
 
@@ -307,16 +337,17 @@ export const mockCallLogs: CallLog[] = [
     }
 ];
 
-// NTB Digital Footprint
+// NTB Digital Footprint - Updated for Campaign & Timeline View
 export const mockNTBInteractions: Interaction[] = [
     {
-      id: 'INT-NTB-001',
-      type: 'Web',
-      direction: 'N/A',
-      date: '2023-10-30 10:05 AM',
-      summary: 'Visited "Fixed Deposit" Product Page. Spent 4 mins.',
-      agentName: 'System',
-      sentiment: 'Neutral'
+        id: 'INT-NTB-003',
+        type: 'Web',
+        direction: 'N/A',
+        date: '2023-10-30 10:15 AM',
+        summary: 'Started Application Form. Dropped off at "KYC Upload" step.',
+        agentName: 'System',
+        sentiment: 'Negative',
+        metadata: { campaignSource: 'Direct', utmSource: 'website_calculator' }
     },
     {
       id: 'INT-NTB-002',
@@ -325,16 +356,28 @@ export const mockNTBInteractions: Interaction[] = [
       date: '2023-10-30 10:10 AM',
       summary: 'Used "FD Calculator". Input: 5L for 3 Years.',
       agentName: 'System',
-      sentiment: 'Positive'
+      sentiment: 'Positive',
+      metadata: { campaignSource: 'Retargeting Email', utmSource: 'email_newsletter', utmCampaign: 'festive_offer_oct' }
     },
     {
-        id: 'INT-NTB-003',
+      id: 'INT-NTB-001b',
+      type: 'Web',
+      direction: 'N/A',
+      date: '2023-10-18 02:45 PM',
+      summary: 'Visited "Fixed Deposit" Product Page. Spent 4 mins.',
+      agentName: 'System',
+      sentiment: 'Neutral',
+      metadata: { campaignSource: 'Organic Search', utmSource: 'google_organic' }
+    },
+    {
+        id: 'INT-NTB-001',
         type: 'Web',
         direction: 'N/A',
-        date: '2023-10-30 10:15 AM',
-        summary: 'Started Application Form. Dropped off at "KYC Upload" step.',
+        date: '2023-10-15 09:30 AM',
+        summary: 'First Website Visit - Landed on Home Page.',
         agentName: 'System',
-        sentiment: 'Negative'
+        sentiment: 'Neutral',
+        metadata: { campaignSource: 'Paid Search', utmSource: 'google_ads', utmMedium: 'cpc', utmCampaign: 'brand_awareness_q3' }
     }
 ];
 
